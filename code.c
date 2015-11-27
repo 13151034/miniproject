@@ -1,0 +1,408 @@
+#include<stdio.h>
+#include<conio.h>
+#include<string.h>
+
+void count(FILE *g,char c[10])
+{
+
+    int l= strlen(c),i=0;
+    if(l<4)
+    {
+        for(i=0;i<4-l;i++)
+            fprintf(g,"0");
+    }
+
+}
+void main()
+{
+char label[10],opcode[10],operand[10],symbol[10],ch,byte_character_size,a[10],ad[10],name[10],tc[10],tc1[10];
+int st,diff,i=0,address,add,actual_len,finaddr,prevaddr,j=0,k=0,locctr=0X0,start=0X0,len=0,byte_operand_length=0,prevaddr1,lendif=0,counter=0,c=0,icounter=0;
+char mnemonic[30][5]={"LDA","LDX","LDCH","LDL","STA","STX","STCH","STL","STSW","ADD","SUB","MUL","DIV","AND","OR","COMP","TIX","J","JLT","JGT","JEQ","JSUB","RSUB","TD","RD","WD"};
+char code[30][5]={"00","04","50","08","0C","10","54","14","E8","18","1C","20","24","40","44","28","2C","3C","38","34","30","48","4C","E0","D8","DC"};
+FILE *fp1,*fp2,*fp3,*text;
+printf("Enter the name of the file:");
+scanf("%s",&name);
+fp1=fopen(name,"r");
+fp2=fopen("symtab.txt","w");
+fp3=fopen("out.txt","w");
+if(fp1==NULL)
+{
+     printf("\n\n                           THE FILE DOESNOT EXIST\n\n");
+exit(0);
+}
+else
+{
+fscanf(fp1,"%s%s%X",label,opcode,&locctr);
+printf("The code is originally at location 000%0X do you want to replace it?Y/N :",locctr);
+scanf("%s",&ch);
+if(ch=='Y'||ch=='y')
+{
+printf("Enter the address");
+scanf("%X",&locctr);
+}
+if(strcmp(opcode,"START")==0)
+{
+prevaddr=locctr;
+fprintf(fp3,"\t%s\t%s\t%0X\n",label,opcode,locctr);
+fscanf(fp1,"%s%s%s",label,opcode,operand);
+}
+
+while(strcmp(opcode,"END")!=0)
+{
+fprintf(fp3,"%0X",locctr);
+
+if(strcmp(label,"**")!=0)
+{
+
+fprintf(fp2,"%s\t%0X\n",label,locctr);
+}
+k=0;
+while(k<26)
+{
+if(strcmp(opcode,mnemonic[k])==0)
+{
+locctr=locctr+3;
+break;
+}
+k++;
+}
+if(strcmp(opcode,"WORD")==0)
+locctr=locctr+3;
+else if(strcmp(opcode,"RESW")==0)
+locctr=locctr+(3*(atoi(operand)));
+else if(strcmp(opcode,"RESB")==0)
+locctr=locctr+(atoi(operand));
+else if(strcmp(opcode,"BYTE")==0)
+{
+
+byte_operand_length=strlen(operand);
+if(operand[0]=='X')
+{
+    locctr=locctr+1;
+
+}
+else
+locctr=locctr+byte_operand_length-3;
+}
+
+fprintf(fp3,"\t%s\t%s\t%s\n",label,opcode,operand);
+fscanf(fp1,"%s%s%s",label,opcode,operand);
+}
+
+fprintf(fp3,"%0X\t%s\t%s\t%s\n",locctr,label,opcode,operand);
+fprintf(fp2,"END\t**");
+finaddr=locctr;
+fclose(fp1);
+fclose(fp2);
+fclose(fp3);
+
+fp2=fopen("symtab.txt","r");
+fp1=fopen("symtab1.txt","w");
+fscanf(fp2,"%s%s",label,tc);
+while(strcmp(label,"END")!=0)
+{
+    fprintf(fp1,"%s\t",label);
+    count(fp1,tc);
+    fprintf(fp1,"%s\n",tc);
+fscanf(fp2,"%s%s\n",label,tc);
+}
+fclose(fp1);
+fclose(fp2);
+
+// PRINTING PASS 1
+
+printf("\n\nThe contents of Input Table:\n\n");
+fp1=fopen(name,"r");
+ch=fgetc(fp1);
+while(ch!=EOF)
+{
+    printf("%c",ch);
+    ch=fgetc(fp1);
+}
+
+len=finaddr-prevaddr;
+
+printf("\n                    THE LENGTH OF THE PROGRAME:%0X \n\n",len);
+printf("\n\nThe contents of SYMTAB :\n\n");
+    fp2=fopen("symtab1.txt","r");
+    ch=fgetc(fp2);
+    while(ch!=EOF)
+    {
+
+        printf("%c",ch);
+        ch=fgetc(fp2);
+    }
+    fclose(fp2);
+    fclose(fp1);
+
+
+
+
+
+//PASS 2:
+
+
+fp1=fopen("assmlist.txt","w");
+fp2=fopen("symtab1.txt","r");
+fp3=fopen("out.txt","r");
+fscanf(fp3,"%s%s%s",label,opcode,operand);
+if(strcmp(opcode,"START")==0)
+{
+fprintf(fp1,"\t%s\t%s\t",label,opcode);
+count(fp1,operand);
+fprintf(fp1,"%s\n",operand);
+fscanf(fp3,"%s%s%s%s",tc,label,opcode,operand);
+diff=finaddr-address;
+}
+while(strcmp(opcode,"END")!=0)
+{
+
+    if(strcmp(opcode,"BYTE")==0)
+    {
+        count(fp1,tc);
+        fprintf(fp1,"%s\t%s\t%s\t%s\t",tc,label,opcode,operand);
+        len=strlen(operand);
+        actual_len=len-3;
+        if(operand[0]=='C')
+        {
+        for(i=2;i<(actual_len+2);i++)
+        {
+            itoa(operand[i],ad,16);
+            fprintf(fp1,"%s",ad);
+
+        }
+        }
+        else
+        {
+            for(i=2;i<(actual_len+2);i++)
+            {
+
+            fprintf(fp1,"%c",operand[i]);
+            }
+        }
+        fprintf(fp1,"\n");
+
+        }
+
+    else if(strcmp(opcode,"WORD")==0)
+    {
+
+        len=strlen(operand);
+        itoa(atoi(operand),a,16);
+        len=strlen(a);
+        lendif=6-len;
+        count(fp1,tc);
+         fprintf(fp1,"%s\t%s\t%s\t%s\t",tc,label,opcode,operand);
+        for(j=0;j<lendif;j++)
+        {
+            fprintf(fp1,"0");
+
+
+        }
+        fprintf(fp1,"%s\n",a);
+
+
+    }
+   else if(strcmp(opcode,"RESB")==0||(strcmp(opcode,"RESW")==0))
+      {
+          count(fp1,tc);
+          fprintf(fp1,"%s\t%s\t%s\t%s\n",tc,label,opcode,operand);
+
+
+      }
+    else
+    {
+        j=0;
+        while(strcmp(opcode,mnemonic[j])!=0)
+            j++;
+        if(strcmp(operand,"COPY")==0)
+        {
+count(fp1,tc);
+        fprintf(fp1,"%s\t%s\t%s\t%s\t%s\n",tc,label,opcode,operand,code[j]);
+
+        }
+        else if(strcmp(opcode,"RSUB")==0)
+            {
+                count(fp1,tc);
+                fprintf(fp1,"%s\t%s\t%s\t%s\t%s0000\n",tc,label,opcode,operand,code[j]);
+
+         fprintf(text,"%s0000",code[j]);
+            }
+        else
+        {
+
+            rewind(fp2);
+            fscanf(fp2,"%s%s",symbol,tc1);
+            while(strcmp(operand,symbol)!=0)
+                fscanf(fp2,"%s %s",symbol,tc1);
+
+count(fp1,tc);
+            fprintf(fp1,"%s\t%s\t%s\t%s\t%s\t",tc,label,opcode,operand,code[j]);
+            count(fp1,tc1);
+            fprintf(fp1,"%s\n",tc1);
+
+        }
+    }
+         fscanf(fp3,"%s\t%s\t%s\t%s\n",tc,label,opcode,operand);
+        }
+
+    count(fp1,tc);
+    fprintf(fp1,"%s\t**\tEND\t**\t**\t**",tc);
+
+        fclose(fp1);
+        fclose(fp2);
+        fclose(fp3);
+
+// PRINTING PASS 2
+
+printf("\n\nThe contents of Intermediate file:\n\n");
+fp3=fopen("out.txt","r");
+fscanf(fp3,"%s%s%s\n",label,opcode,operand);
+printf(fp3,"%s\t%s\t%s\n",label,opcode,operand);
+fscanf(fp3,"%s%s%s%s\n",tc,label,opcode,operand);
+while(strcmp(opcode,"END")!=0)
+{
+       len= strlen(tc),i=0;
+    if(len<4)
+    {
+        for(i=0;i<4-len;i++)
+            printf("0");
+    }
+
+printf("%s\t%s\t%s\t%s\n",tc,label,opcode,operand);
+fscanf(fp3,"%s%s%s%s\n",tc,label,opcode,operand);
+}
+
+
+
+
+
+
+printf("\n\nThe contents of output file:\n\n");
+fp1=fopen("assmlist.txt","r");
+    ch=fgetc(fp1);
+    while(ch!=EOF)
+    {
+
+        printf("%c",ch);
+        ch=fgetc(fp1);
+    }
+
+
+    //TEXT RECORD
+
+
+text=fopen("opcode_file.txt","w");
+rewind(fp1);
+
+    fscanf(fp1,"%s%s%s",label,a,tc1);
+
+    fprintf(text,"H^%s^%s^%0X\n\n",label,tc1,diff);
+     c=0;
+     fscanf(fp1,"%s\t%s\t%s\t%s\t%s\t%s\n",tc,label,symbol,operand,opcode,a);
+    fprintf(text,"T^%s^^%s%s^",tc,opcode,a);
+    c=c+strlen(opcode)+strlen(a);
+     counter=0;
+
+     while(strcmp(symbol,"END")!=0)
+     {
+
+        if(counter==1||strcmp(symbol,"RESB")==0||strcmp(symbol,"RESW")==0)
+         {
+             c=0;
+             fscanf(fp1,"%s\t%s\t%s\n",tc,label,symbol);
+
+            if(strcmp(symbol,"RESB")!=0 && strcmp(symbol,"RESW")!=0)
+             fprintf(text,"\b  \nT^%s^^",tc);
+         }
+         else
+         {
+             fscanf(fp1,"%s\t%s\t%s\n",tc,label,symbol);
+             counter=1;
+
+         }
+
+
+         while(c<=60&&strcmp(symbol,"RESB")!=0&&strcmp(symbol,"RESW")!=0&&strcmp(symbol,"END")!=0)
+         {
+
+
+if(strcmp(symbol,"BYTE")==0||strcmp(symbol,"WORD")==0||strcmp(symbol,"RSUB")==0)
+             {
+                  fscanf(fp1,"%s\t%s\n",operand,opcode);
+                  c=c+strlen(opcode);
+                  if(c>60)
+                  {
+                      fprintf(text,"\n");
+                         c=strlen(opcode);
+                 fprintf(text,"\b  \nT^%s^^",tc);
+                  }
+
+                 fprintf(text,"%s^",opcode);
+
+             }
+
+            else
+                      {
+                           fscanf(fp1,"%s\t%s\t%s\n",operand,opcode,a);
+                           c=c+strlen(opcode)+strlen(a);
+                        if(c>60)
+                                {
+                        fprintf(text,"\n");
+                                c=strlen(opcode)+strlen(a);
+                             fprintf(text,"\b  \nT^%s^^",tc);
+                            }
+
+                         fprintf(text,"%s%s^",opcode,a);
+
+                }
+
+            if(c==60)
+            {
+                c=0;
+                fprintf(text,"\n");
+            }
+
+         fscanf(fp1,"%s\t%s\t%s\n",tc,label,symbol);
+         if(c==0&&strcmp(symbol,"RESB")!=0&&strcmp(symbol,"RESW")!=0)
+            fprintf(text,"\b  \nT^%s^^",tc);
+
+         if(strcmp(symbol,"END")==0)
+            break;
+
+         }
+
+  if(strcmp(symbol,"END")==0)
+            break;
+            else
+       {
+         fprintf(text,"\n");
+         ch=fgetc(fp1);
+
+ fprintf(text," ");
+         while(ch!='\n')
+            {
+                ch=fgetc(fp1);
+                fprintf(text," ");
+            }
+      }
+
+     }
+     fprintf(text,"\b  \n\nE^%s\n",tc1);
+
+      fclose(text);
+
+    printf("\n\nThe OBJECT PROGRAM is :\n\n");
+text=fopen("opcode_file.txt","r");
+    ch=fgetc(text);
+    while(ch!=EOF)
+    {
+
+        printf("%c",ch);
+        ch=fgetc(text);
+    }
+fclose(fp1);
+    fclose(fp2);
+    fclose(fp3);
+}
+}
